@@ -107,7 +107,6 @@ class BleakClientWinRT(BaseBleakClient):
             and kwargs["address_type"] in ("public", "random")
             else None
         )
-        self._disconnected_callback = None
 
         self._connection_status_changed_token = None
         self._use_cached = kwargs.get("use_cached", True)
@@ -487,7 +486,7 @@ class BleakClientWinRT(BaseBleakClient):
                         self.services.add_descriptor(
                             BleakGATTDescriptorWinRT(
                                 descriptor,
-                                "",
+                                str(characteristic.uuid),
                                 characteristic.attribute_handle,
                             )
                         )
@@ -510,8 +509,8 @@ class BleakClientWinRT(BaseBleakClient):
             char_specifier (BleakGATTCharacteristic, int, str or UUID): The characteristic to read from,
                 specified by either integer handle, UUID or directly by the
                 BleakGATTCharacteristic object representing it.
-            use_cached (bool): `False` forces Windows to read the value from the
-                device again and not use its own cached value. Defaults to `False`.
+            use_cached (bool): ``False`` forces Windows to read the value from the
+                device again and not use its own cached value. Defaults to ``False``.
 
         Returns:
             (bytearray) The read data.
@@ -712,7 +711,7 @@ class BleakClientWinRT(BaseBleakClient):
     async def start_notify(
         self,
         char_specifier: Union[BleakGATTCharacteristic, int, str, uuid.UUID],
-        callback: Callable[[str, Any], Any],
+        callback: Callable[[int, bytearray], None],
         **kwargs
     ) -> None:
         """Activate notifications/indications on a characteristic.
@@ -736,7 +735,7 @@ class BleakClientWinRT(BaseBleakClient):
         if inspect.iscoroutinefunction(callback):
 
             def bleak_callback(s, d):
-                asyncio.create_task(callback(s, d))
+                asyncio.ensure_future(callback(s, d))
 
         else:
             bleak_callback = callback
