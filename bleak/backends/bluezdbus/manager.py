@@ -488,7 +488,32 @@ class BlueZManager:
                     props
                 )
 
-            callback(message.path, cast(Device1, self_interface.copy()))
+            for (
+                callback,
+                adapter_path,
+                seen_devices,
+            ) in self._advertisement_callbacks:
+                # filter messages from other adapters
+                if not message.path.startswith(adapter_path):
+                    continue
+
+                first_time_seen = False
+
+                if message.path not in seen_devices:
+                    first_time_seen = True
+                    seen_devices.add(message.path)
+
+                # Only do advertising data callback if this is the first time the
+                # device has been seen or if an advertising data property changed.
+                # Otherwise we get a flood of callbacks from RSSI changing.
+                if (
+                    first_time_seen
+                    or not _ADVERTISING_DATA_PROPERTIES.isdisjoint(
+                        changed.keys()
+                    )
+                ):
+                    # TODO: this should be deep copy, not shallow
+                    callback(message.path, cast(Device1, self_interface.copy()))
         elif message.member == "InterfacesRemoved":
             obj_path, interfaces = message.body
 
