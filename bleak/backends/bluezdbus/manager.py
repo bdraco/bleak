@@ -487,6 +487,8 @@ class BlueZManager:
                 self._properties.setdefault(obj_path, {})[interface] = unpack_variants(
                     props
                 )
+
+            callback(message.path, cast(Device1, self_interface.copy()))
         elif message.member == "InterfacesRemoved":
             obj_path, interfaces = message.body
 
