@@ -9,11 +9,22 @@ used internally by Bleak.
 import asyncio
 import logging
 import os
-from typing import Any, Callable, Coroutine, Dict, List, NamedTuple, Set, Tuple, cast
+from typing import (
+    Any,
+    Callable,
+    Coroutine,
+    Dict,
+    List,
+    NamedTuple,
+    Set,
+    Tuple,
+    Union,
+    cast,
+)
 
 from dbus_next import BusType, Message, MessageType, Variant
 from dbus_next.aio.message_bus import MessageBus
-from typing_extensions import TypedDict, Literal
+from typing_extensions import Literal, TypedDict
 
 from ...exc import BleakError
 from . import defs
@@ -460,6 +471,37 @@ class BlueZManager:
                 self._advertisement_callbacks.remove(callback_and_state)
                 raise
 
+    def _process_callbacks(
+        self,
+        message: Message,
+        self_interface: Dict[str, Dict[str, Any]],
+        changed: Dict[str, Union[Variant, Dict[str, Variant]]],
+    ) -> None:
+        """Process any callbacks for the message."""
+        for (
+            callback,
+            adapter_path,
+            seen_devices,
+        ) in self._advertisement_callbacks:
+            # filter messages from other adapters
+            if not message.path.startswith(adapter_path):
+                continue
+
+            first_time_seen = False
+
+            if message.path not in seen_devices:
+                first_time_seen = True
+                seen_devices.add(message.path)
+
+            # Only do advertising data callback if this is the first time the
+            # device has been seen or if an advertising data property changed.
+            # Otherwise we get a flood of callbacks from RSSI changing.
+            if first_time_seen or not _ADVERTISING_DATA_PROPERTIES.isdisjoint(
+                changed.keys()
+            ):
+                # TODO: this should be deep copy, not shallow
+                callback(message.path, cast(Device1, self_interface.copy()))
+
     def _parse_msg(self, message: Message):
         """
         Handles callbacks from dbus_next.
@@ -484,36 +526,11 @@ class BlueZManager:
             obj_path, interfaces_and_props = message.body
 
             for interface, props in interfaces_and_props.items():
-                self._properties.setdefault(obj_path, {})[interface] = unpack_variants(
-                    props
-                )
-
-            for (
-                callback,
-                adapter_path,
-                seen_devices,
-            ) in self._advertisement_callbacks:
-                # filter messages from other adapters
-                if not message.path.startswith(adapter_path):
-                    continue
-
-                first_time_seen = False
-
-                if message.path not in seen_devices:
-                    first_time_seen = True
-                    seen_devices.add(message.path)
-
-                # Only do advertising data callback if this is the first time the
-                # device has been seen or if an advertising data property changed.
-                # Otherwise we get a flood of callbacks from RSSI changing.
-                if (
-                    first_time_seen
-                    or not _ADVERTISING_DATA_PROPERTIES.isdisjoint(
-                        changed.keys()
-                    )
-                ):
-                    # TODO: this should be deep copy, not shallow
-                    callback(message.path, cast(Device1, self_interface.copy()))
+                self_interface = self._properties.setdefault(obj_path, {})[
+                    interface
+                ] = unpack_variants(props)
+            if interface == defs.DEVICE_INTERFACE:
+                self._process_callbacks(message, self_interface, interfaces_and_props)
         elif message.member == "InterfacesRemoved":
             obj_path, interfaces = message.body
 
@@ -537,32 +554,7 @@ class BlueZManager:
                 self_interface.update(unpack_variants(changed))
 
                 if interface == defs.DEVICE_INTERFACE:
-                    for (
-                        callback,
-                        adapter_path,
-                        seen_devices,
-                    ) in self._advertisement_callbacks:
-                        # filter messages from other adapters
-                        if not message.path.startswith(adapter_path):
-                            continue
-
-                        first_time_seen = False
-
-                        if message.path not in seen_devices:
-                            first_time_seen = True
-                            seen_devices.add(message.path)
-
-                        # Only do advertising data callback if this is the first time the
-                        # device has been seen or if an advertising data property changed.
-                        # Otherwise we get a flood of callbacks from RSSI changing.
-                        if (
-                            first_time_seen
-                            or not _ADVERTISING_DATA_PROPERTIES.isdisjoint(
-                                changed.keys()
-                            )
-                        ):
-                            # TODO: this should be deep copy, not shallow
-                            callback(message.path, cast(Device1, self_interface.copy()))
+                    self._process_callbacks(message, self_interface, changed)
 
                 for name in invalidated:
                     del self_interface[name]
