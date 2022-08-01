@@ -10,6 +10,11 @@ and this project adheres to `Semantic Versioning <https://semver.org/spec/v2.0.0
 `Unreleased`_
 =============
 
+Fixed
+-----
+* Made logging lazy to improve performance.
+
+
 `0.15.0`_ (2022-07-29)
 ======================
 
