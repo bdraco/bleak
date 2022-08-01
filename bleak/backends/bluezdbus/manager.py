@@ -709,7 +709,7 @@ class BlueZManager:
             assert message.path is not None
 
             interface, changed, invalidated = message.body
-            logger.warning("Changed: interface: %s, changed: %s, invalidated: %s", interface, changed, invalidated)
+            #logger.warning("Changed: interface: %s, changed: %s, invalidated: %s", interface, changed, invalidated)
 
             try:
                 self_interface = self._properties[message.path][interface]
