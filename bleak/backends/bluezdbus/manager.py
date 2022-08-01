@@ -314,6 +314,8 @@ class BlueZManager:
                     interface=defs.PROPERTIES_INTERFACE,
                     member="PropertiesChanged",
                     path_namespace="/org/bluez",
+                    arg0="ManufacturerData",
+                    arg1="RSSI"
                 )
                 reply = await add_match(self._bus, rules)
                 assert_reply(reply)
