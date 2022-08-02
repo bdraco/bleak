@@ -288,6 +288,9 @@ class BlueZManager:
             if self._bus and self._bus.connected:
                 return
 
+            # We need to create a new MessageBus each time as
+            # dbus-next will destory the underlying file descriptors
+            # when the previous one is closed in its finalizer.
             bus = MessageBus(bus_type=BusType.SYSTEM)
             await bus.connect()
 
