@@ -739,15 +739,6 @@ class BlueZManager:
                 # updated state
 
                 if interface == defs.DEVICE_INTERFACE:
-                    # handle advertisement watchers
-
-                    self._run_advertisement_callbacks(
-                        message.path, cast(Device1, self_interface), changed.keys()
-                    )
-
-                    # handle device condition watchers
-                    for condition_callback in self._condition_callbacks:
-                        condition_callback()
 
                     # handle device connection change watchers
 
@@ -760,6 +751,16 @@ class BlueZManager:
                             # callbacks may remove the watcher, hence the copy() above
                             if message.path == device_path:
                                 on_connected_changed(self_interface["Connected"])
+
+                    # handle advertisement watchers
+
+                    self._run_advertisement_callbacks(
+                        message.path, cast(Device1, self_interface), changed.keys()
+                    )
+
+                    # handle device condition watchers
+                    for condition_callback in self._condition_callbacks:
+                        condition_callback()
 
                 elif interface == defs.GATT_CHARACTERISTIC_INTERFACE:
                     # handle characteristic value change watchers
