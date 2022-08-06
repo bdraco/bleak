@@ -197,6 +197,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
 
                 raise
 
+            logger.debug("Starting disconnect monitor for %s: ", self._device_path)
             # Create a task that runs until the device is disconnected.
             self._disconnect_monitor_event = asyncio.Event()
             asyncio.ensure_future(self._disconnect_monitor())
@@ -206,7 +207,9 @@ class BleakClientBlueZDBus(BaseBleakClient):
             # We will try to use the cache if it exists and `dangerous_use_bleak_cache`
             # is True.
             #
+            logger.debug("Calling get services for %s: ", self._device_path)
             await self.get_services(dangerous_use_bleak_cache=dangerous_use_bleak_cache)
+            logger.debug("CONNECTED! %s: ", self._device_path)
 
             return True
         except BaseException:
