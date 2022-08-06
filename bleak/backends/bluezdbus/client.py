@@ -155,6 +155,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
 
         try:
             try:
+                logger.debug("%s: Connecting to device", self.address)
                 async with async_timeout.timeout(timeout):
                     reply = await self._bus.call(
                         Message(
@@ -165,6 +166,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
                         )
                     )
                 assert_reply(reply)
+                logger.debug("%s: Finished connecting to device", self.address)
 
                 self._is_connected = True
             except BaseException:
