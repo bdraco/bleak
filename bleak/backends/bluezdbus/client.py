@@ -164,11 +164,12 @@ class BleakClientBlueZDBus(BaseBleakClient):
                         member="Connect",
                     )
                 ))
-                asyncio.wait(
+                done, pending = asyncio.wait(
                     [connect_callback, connect_task],
                     timeout=timeout,
                     return_when=asyncio.FIRST_COMPLETED,
                 )
+                logger.debug("%s: wait done: %s, pending: %s", self.address, done, pending)
                 if connect_callback.done():
                     logger.debug("%s: The connect callback completed before the bus call returned", self.address)
                 elif connect_task.done():
