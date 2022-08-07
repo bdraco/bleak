@@ -173,8 +173,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
                 if connect_callback.done():
                     logger.debug("%s: The connect callback completed before the bus call returned", self.address)
                 elif connect_task.done():
-                    reply = await connect_callback
-                    assert_reply(reply)
+                    assert_reply(connect_task.result())
                     connect_callback.cancel()
                 else:
                     connect_callback.cancel()
