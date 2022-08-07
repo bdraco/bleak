@@ -182,6 +182,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
 
                 self._is_connected = True
             except BaseException:
+                logger.exception("%s: Exception while connecting", self.address)
                 # calling Disconnect cancels any pending connect request
                 if self._bus:
                     # If disconnected callback already fired, this will be a no-op
