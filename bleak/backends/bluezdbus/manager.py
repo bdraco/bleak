@@ -582,7 +582,7 @@ class BlueZManager:
                 logger.debug("Using cached services for %s", device_path)
                 return services
 
-        await self.wait_condition(device_path, "ServicesResolved", True)
+        await self._wait_condition(device_path, "ServicesResolved", True)
 
         services = BleakGATTServiceCollection()
 
@@ -647,7 +647,20 @@ class BlueZManager:
         """
         return self._properties[device_path][defs.DEVICE_INTERFACE]["Name"]
 
-    async def wait_condition(
+    async def wait_connected(self, device_path: str) -> None:
+        """
+        Waits for a device to become connected.
+
+        Args:
+            device_path: The D-Bus object path of the device.
+        """
+        # Reset the property so we don't return right away since the
+        # device may have already disconnected and we did not see
+        # it since we were not listening for the property change.
+        self._properties[device_path][defs.DEVICE_INTERFACE]["Connected"] = False
+        await self._wait_condition(device_path, "Connected", True)
+
+    async def _wait_condition(
         self, device_path: str, property_name: str, property_value: Any
     ) -> None:
         """
