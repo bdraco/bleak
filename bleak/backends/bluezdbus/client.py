@@ -155,7 +155,6 @@ class BleakClientBlueZDBus(BaseBleakClient):
 
         try:
             try:
-                logger.debug("%s: Connecting to device", self.address)
                 connect_callback = asyncio.create_task(manager.wait_condition(self._device_path, "Connected", True))
                 connect_task = asyncio.create_task(self._bus.call(
                     Message(
@@ -170,10 +169,14 @@ class BleakClientBlueZDBus(BaseBleakClient):
                     timeout=timeout,
                     return_when=asyncio.FIRST_COMPLETED,
                 )
-                if connect_task.done():
+                if connect_callback.done():
+                    logger.debug("%s: The connect callback completed before the bus call returned", self.address)
+                elif connect_task.done():
                     reply = await connect_callback
                     assert_reply(reply)
-                logger.debug("%s: Finished connecting to device", self.address)
+                    connect_callback.cancel()
+                else:
+                    raise asyncio.TimeoutError(f"Timed out connecting {self.address} after {timeout}s")
 
                 self._is_connected = True
             except BaseException:
