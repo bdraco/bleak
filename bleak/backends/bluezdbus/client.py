@@ -164,7 +164,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
                         member="Connect",
                     )
                 ))
-                done, pending = asyncio.wait(
+                done, pending = await asyncio.wait(
                     [connect_callback, connect_task],
                     timeout=timeout,
                     return_when=asyncio.FIRST_COMPLETED,
