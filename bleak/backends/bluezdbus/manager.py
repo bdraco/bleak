@@ -582,7 +582,7 @@ class BlueZManager:
                 logger.debug("Using cached services for %s", device_path)
                 return services
 
-        await self._wait_condition(device_path, "ServicesResolved", True)
+        await self.wait_condition(device_path, "ServicesResolved", True)
 
         services = BleakGATTServiceCollection()
 
@@ -647,7 +647,7 @@ class BlueZManager:
         """
         return self._properties[device_path][defs.DEVICE_INTERFACE]["Name"]
 
-    async def _wait_condition(
+    async def wait_condition(
         self, device_path: str, property_name: str, property_value: Any
     ) -> None:
         """
