@@ -156,16 +156,22 @@ class BleakClientBlueZDBus(BaseBleakClient):
         try:
             try:
                 logger.debug("%s: Connecting to device", self.address)
-                async with async_timeout.timeout(timeout):
-                    reply = await self._bus.call(
-                        Message(
-                            destination=defs.BLUEZ_SERVICE,
-                            interface=defs.DEVICE_INTERFACE,
-                            path=self._device_path,
-                            member="Connect",
-                        )
+                connect_callback = asyncio.create_task(manager.wait_condition(self._device_path, "Connected", True))
+                connect_task = asyncio.create_task(self._bus.call(
+                    Message(
+                        destination=defs.BLUEZ_SERVICE,
+                        interface=defs.DEVICE_INTERFACE,
+                        path=self._device_path,
+                        member="Connect",
                     )
-                assert_reply(reply)
+                ))
+                asyncio.wait(
+                    [connect_callback, connect_task],
+                    return_when=asyncio.FIRST_COMPLETED,
+                )
+                if connect_task.done():
+                    reply = await connect_callback
+                    assert_reply(reply)
                 logger.debug("%s: Finished connecting to device", self.address)
 
                 self._is_connected = True
