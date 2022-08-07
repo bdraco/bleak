@@ -176,6 +176,8 @@ class BleakClientBlueZDBus(BaseBleakClient):
                     assert_reply(reply)
                     connect_callback.cancel()
                 else:
+                    connect_callback.cancel()
+                    connect_task.cancel()
                     raise asyncio.TimeoutError(f"Timed out connecting {self.address} after {timeout}s")
 
                 self._is_connected = True
