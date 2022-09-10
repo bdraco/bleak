@@ -216,7 +216,7 @@ class BlueZManager:
 
                 # get existing objects after adding signal handlers to avoid
                 # race condition
-
+                logger.debug("Sending GenManagedObjects")
                 reply = await bus.call(
                     Message(
                         destination=defs.BLUEZ_SERVICE,
@@ -226,6 +226,7 @@ class BlueZManager:
                     )
                 )
                 assert_reply(reply)
+                logger.debug("Got back GenManagedObjects")
 
                 # dictionaries are cleared in case AddInterfaces was received first
                 # or there was a bus reset and we are reconnecting
