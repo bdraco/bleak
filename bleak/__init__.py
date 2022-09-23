@@ -588,6 +588,10 @@ class BleakClient:
         """
         await self._backend.write_gatt_descriptor(handle, data)
 
+    @property
+    def mtu_size(self) -> int:
+        """Get ATT MTU size for active connection"""
+        return self._backend.mtu_size
 
 # for backward compatibility
 def discover():
