@@ -10,6 +10,10 @@ and this project adheres to `Semantic Versioning <https://semver.org/spec/v2.0.0
 `Unreleased`_
 =============
 
+Changed
+-------
+* A faster ``unpack_variants`` is now provided by dbus-fast
+
 Added
 -----
 * Added support for Python 3.11.
