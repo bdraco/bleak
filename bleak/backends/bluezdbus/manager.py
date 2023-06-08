@@ -866,7 +866,7 @@ class BlueZManager:
                     # handle device connection change watchers
 
                     if "Connected" in changed:
-                        watchers = self._device_watchers.get(obj_path)
+                        watchers = self._device_watchers.get(message.path)
                         if watchers:
                             # callbacks may remove the watcher, hence the view
                             for watcher in watchers[:]:
