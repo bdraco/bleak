@@ -110,7 +110,6 @@ Args:
 
 
 class DeviceWatcher(NamedTuple):
-
     device_path: str
     """
     The D-Bus object path of the device.
@@ -167,7 +166,7 @@ class BlueZManager:
 
         self._advertisement_callbacks: List[CallbackAndState] = []
         self._device_removed_callbacks: List[DeviceRemovedCallbackAndState] = []
-        self._device_watchers: Set[DeviceWatcher] = set()
+        self._device_watchers: Dict[str, list[DeviceWatcher]] = {}
         self._condition_callbacks: Set[Callable] = set()
         self._services_cache: Dict[str, BleakGATTServiceCollection] = {}
 
@@ -539,7 +538,7 @@ class BlueZManager:
             device_path, on_connected_changed, on_characteristic_value_changed
         )
 
-        self._device_watchers.add(watcher)
+        self._device_watchers.setdefault(device_path, []).append(watcher)
         return watcher
 
     def remove_device_watcher(self, watcher: DeviceWatcher) -> None:
@@ -550,7 +549,10 @@ class BlueZManager:
             The device watcher token that was returned by
             :meth:`add_device_watcher`.
         """
-        self._device_watchers.remove(watcher)
+        device_path = watcher.device_path
+        self._device_watchers[device_path].remove(watcher)
+        if not self._device_watchers[device_path]:
+            del self._device_watchers[device_path]
 
     async def get_services(
         self, device_path: str, use_cached: bool, requested_services: Optional[Set[str]]
@@ -802,6 +804,14 @@ class BlueZManager:
                     for callback, adapter_path in self._device_removed_callbacks:
                         if obj_path.startswith(adapter_path):
                             callback(obj_path)
+
+                    # Stop waiting for a device to be disconnected if its
+                    # object path is removed.
+                    watchers = self._device_watchers.get(obj_path)
+                    if watchers:
+                        # callbacks may remove the watcher, hence the view
+                        for watcher in watchers[:]:
+                            watcher.on_connected_changed(False)
                 elif interface == defs.GATT_SERVICE_INTERFACE:
                     try:
                         del self._characteristic_map[obj_path]
@@ -856,22 +866,24 @@ class BlueZManager:
                     # handle device connection change watchers
 
                     if "Connected" in changed:
-                        for (
-                            device_path,
-                            on_connected_changed,
-                            _,
-                        ) in self._device_watchers.copy():
-                            # callbacks may remove the watcher, hence the copy() above
-                            if message.path == device_path:
-                                on_connected_changed(self_interface["Connected"])
+                        watchers = self._device_watchers.get(obj_path)
+                        if watchers:
+                            # callbacks may remove the watcher, hence the view
+                            for watcher in watchers[:]:
+                                watcher.on_connected_changed(
+                                    self_interface["Connected"]
+                                )
 
                 elif interface == defs.GATT_CHARACTERISTIC_INTERFACE:
                     # handle characteristic value change watchers
 
                     if "Value" in changed:
-                        for device_path, _, on_value_changed in self._device_watchers:
+                        for device_path, watchers in self._device_watchers.items():
                             if message.path.startswith(device_path):
-                                on_value_changed(message.path, self_interface["Value"])
+                                for watcher in watchers:
+                                    watcher.on_characteristic_value_changed(
+                                        message.path, self_interface["Value"]
+                                    )
 
     def _run_advertisement_callbacks(
         self, device_path: str, device: Device1, changed: Iterable[str]
@@ -884,7 +896,7 @@ class BlueZManager:
             device: The current D-Bus properties of the device.
             changed: A list of properties that have changed since the last call.
         """
-        for (callback, adapter_path) in self._advertisement_callbacks:
+        for callback, adapter_path in self._advertisement_callbacks:
             # filter messages from other adapters
             if adapter_path != device["Adapter"]:
                 continue
