@@ -807,7 +807,7 @@ class BlueZManager:
                             callback(obj_path)
 
                     # handle device condition watchers
-                    condition_callbacks = self._condition_callbacks.get(device_path)
+                    condition_callbacks = self._condition_callbacks.get(obj_path)
                     if condition_callbacks:
                         for condition_callback in condition_callbacks:
                             condition_callback({"Connected": False})
