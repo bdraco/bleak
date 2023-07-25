@@ -806,7 +806,8 @@ class BlueZManager:
                         if obj_path.startswith(adapter_path):
                             callback(obj_path)
 
-                    # handle device condition watchers
+                    # handle device condition watchers. If the underlying
+                    # object is removed, then the Connected condition is no longer true.
                     condition_callbacks = self._condition_callbacks.get(obj_path)
                     if condition_callbacks:
                         for condition_callback in condition_callbacks:
