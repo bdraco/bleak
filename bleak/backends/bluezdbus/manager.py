@@ -167,7 +167,9 @@ class BlueZManager:
         self._advertisement_callbacks: List[CallbackAndState] = []
         self._device_removed_callbacks: List[DeviceRemovedCallbackAndState] = []
         self._device_watchers: Dict[str, list[DeviceWatcher]] = {}
-        self._condition_callbacks: Set[Callable] = set()
+        self._condition_callbacks: Dict[
+            str, Set[Callable[[Dict[str, Variant], None]]]
+        ] = {}
         self._services_cache: Dict[str, BleakGATTServiceCollection] = {}
 
     async def async_init(self):
@@ -706,20 +708,21 @@ class BlueZManager:
 
         event = asyncio.Event()
 
-        def callback():
-            if (
-                self._properties[device_path][defs.DEVICE_INTERFACE][property_name]
-                == property_value
-            ):
+        def _wait_condition_callback(changed: Dict[str, Variant]) -> None:
+            """Callback for when a property changes."""
+            if changed.get(property_name) == property_value:
                 event.set()
 
-        self._condition_callbacks.add(callback)
+        device_callbacks = self._condition_callbacks.setdefault(device_path, set())
+        device_callbacks.add(_wait_condition_callback)
 
         try:
             # can be canceled
             await event.wait()
         finally:
-            self._condition_callbacks.remove(callback)
+            device_callbacks.remove(_wait_condition_callback)
+            if not device_callbacks:
+                del self._condition_callbacks[device_path]
 
     def _parse_msg(self, message: Message):
         """
@@ -854,19 +857,21 @@ class BlueZManager:
 
                 if interface == defs.DEVICE_INTERFACE:
                     # handle advertisement watchers
+                    device_path = message.path
 
                     self._run_advertisement_callbacks(
-                        message.path, cast(Device1, self_interface), changed.keys()
+                        device_path, cast(Device1, self_interface), changed.keys()
                     )
 
                     # handle device condition watchers
-                    for condition_callback in self._condition_callbacks:
-                        condition_callback()
+                    condition_callbacks = self._condition_callbacks.get(device_path)
+                    if condition_callbacks:
+                        for condition_callback in condition_callbacks:
+                            condition_callback(changed)
 
                     # handle device connection change watchers
-
                     if "Connected" in changed:
-                        watchers = self._device_watchers.get(message.path)
+                        watchers = self._device_watchers.get(device_path)
                         if watchers:
                             # callbacks may remove the watcher, hence the view
                             for watcher in watchers[:]:
