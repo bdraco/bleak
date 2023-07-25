@@ -32,6 +32,10 @@ Fixed
 * Fixed typing for ``BaseBleakScanner`` detection callback.
 * Fixed possible crash in ``_stopped_handler()`` in WinRT backend. Fixes #1330.
 * Reduce expensive logging in the BlueZ backend.
+* Fixed ``KeyError`` being raised during waiting for service
+  discovery in BlueZ backend.
+* Fixed waiting on services to be resolved forever if the device is
+  removed from the bus in BlueZ backend.
 
 `0.20.2`_ (2023-04-19)
 ======================
