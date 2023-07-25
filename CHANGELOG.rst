@@ -10,19 +10,40 @@ and this project adheres to `Semantic Versioning <https://semver.org/spec/v2.0.0
 `Unreleased`_
 =============
 
-- Fixed ``KeyError`` being raised during waiting for service
-  discovery in BlueZ backend.
-- Fixed waiting on services to be resolved forever if the device is
-  removed from the bus in BlueZ backend.
+Added
+-----
+* Added ``bleak.uuids.normalize_uuid_16()`` function.
+* Added ``bleak.uuids.normalize_uuid_32()`` function.
 
+Changed
+-------
+* Improved error messages when failing to get services in WinRT backend.
+* Improved error messages with enum values in WinRT backend. Fixes #1284.
+* Scanner backends modified to allow multiple advertisement callbacks. Merged #1367.
+* Changed default handling of the ``response`` argument in ``BleakClient.write_gatt_char``.
+  Fixes #909.
+* Added ``advertisement_data()`` async iterator method to ``BleakScanner``. Merged #1361.
+* Added ``scan_iterator.py`` example.
+
+Fixed
+-----
+* Fix handling all access denied errors when enumerating characteristics on Windows. Fixes #1291.
+* Added support for 32bit UUIDs. Fixes #1314.
+* Fixed typing for ``BaseBleakScanner`` detection callback.
+* Fixed possible crash in ``_stopped_handler()`` in WinRT backend. Fixes #1330.
+* Fixed ``KeyError`` being raised during waiting for service
+  discovery in BlueZ backend.
+* Fixed waiting on services to be resolved forever if the device is
+  removed from the bus in BlueZ backend.
+  
 `0.20.2`_ (2023-04-19)
 ======================
 
 Fixed
 -----
-- Fixed ``org.bluez.Error.InProgress`` in characteristic and descriptor read and
+* Fixed ``org.bluez.Error.InProgress`` in characteristic and descriptor read and
   write methods in BlueZ backend.
-- Fixed ``OSError: [WinError -2147483629] The object has been closed`` when
+* Fixed ``OSError: [WinError -2147483629] The object has been closed`` when
   connecting on Windows. Fixes #1280.
 
 `0.20.1`_ (2023-03-24)
