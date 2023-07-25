@@ -167,9 +167,7 @@ class BlueZManager:
         self._advertisement_callbacks: List[CallbackAndState] = []
         self._device_removed_callbacks: List[DeviceRemovedCallbackAndState] = []
         self._device_watchers: Dict[str, list[DeviceWatcher]] = {}
-        self._condition_callbacks: Dict[
-            str, Set[Callable[[Dict[str, Variant], None]]]
-        ] = {}
+        self._condition_callbacks: Dict[str, Set[Callable[[Dict[str, Any], None]]]] = {}
         self._services_cache: Dict[str, BleakGATTServiceCollection] = {}
 
     async def async_init(self):
@@ -708,7 +706,7 @@ class BlueZManager:
 
         event = asyncio.Event()
 
-        def _wait_condition_callback(changed: Dict[str, Variant]) -> None:
+        def _wait_condition_callback(changed: Dict[str, Any]) -> None:
             """Callback for when a property changes."""
             if changed.get(property_name) == property_value:
                 event.set()
@@ -808,6 +806,12 @@ class BlueZManager:
                         if obj_path.startswith(adapter_path):
                             callback(obj_path)
 
+                    # handle device condition watchers
+                    condition_callbacks = self._condition_callbacks.get(device_path)
+                    if condition_callbacks:
+                        for condition_callback in condition_callbacks:
+                            condition_callback({"Connected": False})
+
                     # Stop waiting for a device to be disconnected if its
                     # object path is removed.
                     watchers = self._device_watchers.get(obj_path)
@@ -841,8 +845,9 @@ class BlueZManager:
                 pass
             else:
                 # update self._properties first
+                unpacked_changed: Dict[str, Any] = unpack_variants(changed)
 
-                self_interface.update(unpack_variants(changed))
+                self_interface.update(unpacked_changed)
 
                 for name in invalidated:
                     try:
@@ -867,7 +872,7 @@ class BlueZManager:
                     condition_callbacks = self._condition_callbacks.get(device_path)
                     if condition_callbacks:
                         for condition_callback in condition_callbacks:
-                            condition_callback(changed)
+                            condition_callback(unpacked_changed)
 
                     # handle device connection change watchers
                     if "Connected" in changed:
