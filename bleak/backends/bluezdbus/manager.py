@@ -831,9 +831,9 @@ class BlueZManager:
                     except KeyError:
                         pass
         elif message.member == "PropertiesChanged":
-            assert message.path is not None
-
             interface, changed, invalidated = message.body
+            message_path = message.path
+            assert message_path is not None
 
             try:
                 self_interface = self._properties[message.path][interface]
@@ -863,7 +863,7 @@ class BlueZManager:
 
                 if interface == defs.DEVICE_INTERFACE:
                     # handle advertisement watchers
-                    device_path = message.path
+                    device_path = message_path
 
                     self._run_advertisement_callbacks(
                         device_path, cast(Device1, self_interface), changed.keys()
@@ -890,10 +890,10 @@ class BlueZManager:
 
                     if "Value" in changed:
                         for device_path, watchers in self._device_watchers.items():
-                            if message.path.startswith(device_path):
+                            if message_path.startswith(device_path):
                                 for watcher in watchers:
                                     watcher.on_characteristic_value_changed(
-                                        message.path, self_interface["Value"]
+                                        message_path, self_interface["Value"]
                                     )
 
     def _run_advertisement_callbacks(
