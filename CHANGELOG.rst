@@ -10,6 +10,11 @@ and this project adheres to `Semantic Versioning <https://semver.org/spec/v2.0.0
 `Unreleased`_
 =============
 
+- Fixed ``KeyError`` being raised during waiting for service
+  discovery in BlueZ backend.
+- Fixed waiting on services to be resolved forever if the device is
+  removed from the bus in BlueZ backend.
+
 `0.20.2`_ (2023-04-19)
 ======================
 
