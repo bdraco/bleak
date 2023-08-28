@@ -983,14 +983,16 @@ class BlueZManager:
                     )
                     if device_condition_callbacks:
                         logger.warning(
-                            "device %s changed properties %s (%s)",
+                            "device %s changed properties %s (%s) - new: %s",
                             device_path,
                             changed,
                             device_condition_callbacks,
+                            self_interface,
                         )
-                        for property_name, callback in device_condition_callbacks:
-                            if property_name in changed:
-                                callback(self_interface.get(property_name))
+                        for prop_name, callback in device_condition_callbacks:
+                            if prop_name in changed:
+
+                                callback(self_interface.get(prop_name))
 
                     # handle device connection change watchers
                     if "Connected" in changed:
