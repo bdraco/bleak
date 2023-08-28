@@ -990,6 +990,12 @@ class BlueZManager:
                     if "Connected" in changed:
                         new_connected = self_interface["Connected"]
                         watchers = self._device_watchers.get(device_path)
+                        logger.warning(
+                            "device %s changed connection state to %s (%s)",
+                            device_path,
+                            new_connected,
+                            watchers
+                        )
                         if watchers:
                             # callbacks may remove the watcher, hence the copy
                             for watcher in watchers.copy():
@@ -1001,6 +1007,13 @@ class BlueZManager:
                         new_value = self_interface["Value"]
                         device_path = device_path_from_characteristic_path(message_path)
                         watchers = self._device_watchers.get(device_path)
+                        logger.warning(
+                            "device %s (%s) changed connection state to %s (%s)",
+                            device_path,
+                            message_path,
+                            new_value,
+                            watchers
+                        )
                         if watchers:
                             for watcher in watchers:
                                 watcher.on_characteristic_value_changed(
