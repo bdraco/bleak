@@ -190,6 +190,7 @@ class BleakScannerBlueZDBus(BaseBleakScanner):
             path: The D-Bus object path of the device.
             props: The D-Bus object properties of the device.
         """
+        logger.warning("_handle_advertising_data: %s", path)
         _service_uuids = props.get("UUIDs", [])
 
         if not self.is_allowed_uuid(_service_uuids):
@@ -236,6 +237,8 @@ class BleakScannerBlueZDBus(BaseBleakScanner):
         """
         Handles a device being removed from BlueZ.
         """
+        logger.warning("_handle_device_removed: %s", device_path)
+
         try:
             del self.seen_devices[device_path]
         except KeyError:
